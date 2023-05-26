@@ -12,6 +12,7 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__)) + "/test-files/"
 trackFileList = []
 currentYearString = str(datetime.now().year)
 
+# Stylize month got as an integer to string in format: "05-23". Used for folder naming.
 def getCurrentMonthFolderName():
   plainMonth = datetime.now().month
   if plainMonth < 10:
@@ -34,7 +35,6 @@ def organiseSingleTrack(trackRawFilePath):
   if ( os.path.exists(trackRawFilePath) and audiofile):
     artistFolderName = audiofile["TPE1"].text[0]
     print("Artist name: " + artistFolderName)
-    print(ROOT_DIR)
 
     if artistFolderName:
 
@@ -82,7 +82,6 @@ class PyMusicOrganiser(QWidget):
         self.setLayout(mainLayout)
 
     def organiseTracksFromListing(self):
-      # print("list size " + str(len(trackFileList)))
       for index, singleTrackFilePath in enumerate(trackFileList):
         print(singleTrackFilePath)
         if organiseSingleTrack(singleTrackFilePath):
@@ -92,7 +91,6 @@ class PyMusicOrganiser(QWidget):
           items = self.trackListWidget.findItems(singleTrackFilePath, Qt.MatchExactly)
           if len(items) > 0:
              for singleItem in items:
-                #self.listWidgetName.row(singleItem).
                 singleItem.setBackground(QColor("#ff2e2e"))
 
 
