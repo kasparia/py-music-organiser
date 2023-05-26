@@ -4,6 +4,7 @@ from datetime import datetime
 import shutil
 import sys, os
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QListWidget, QPushButton
+from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__)) + "/test-files/"
@@ -25,9 +26,12 @@ def organiseSingleTrack(trackRawFilePath):
   rawFileName = os.path.basename(trackRawFilePath)
   print("Running organiser for file: " + rawFileName)
 
-  if ( os.path.exists(trackRawFilePath)):
+  try:
     audiofile = ID3(trackRawFilePath)
-      
+  except mutagen.id3.ID3NoHeaderError:
+    return False # If no ID3 tag is found, return as error file for list styling
+
+  if ( os.path.exists(trackRawFilePath) and audiofile):
     artistFolderName = audiofile["TPE1"].text[0]
     print("Artist name: " + artistFolderName)
     print(ROOT_DIR)
@@ -57,7 +61,6 @@ def organiseSingleTrack(trackRawFilePath):
       trackFileList.remove(trackRawFilePath)
       return True
 
-
 class PyMusicOrganiser(QWidget):
 
     def __init__(self):
@@ -84,6 +87,13 @@ class PyMusicOrganiser(QWidget):
         print(singleTrackFilePath)
         if organiseSingleTrack(singleTrackFilePath):
           self.trackListWidget.takeItem(index)
+          break
+        else:
+          items = self.trackListWidget.findItems(singleTrackFilePath, Qt.MatchExactly)
+          if len(items) > 0:
+             for singleItem in items:
+                #self.listWidgetName.row(singleItem).
+                singleItem.setBackground(QColor("#ff2e2e"))
 
 
     def dragEnterEvent(self, event):
