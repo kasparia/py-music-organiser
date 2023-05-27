@@ -4,7 +4,8 @@ import sys
 import os
 import mutagen
 from mutagen.id3 import ID3
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QListWidget, QPushButton
+from mutagen.easyid3 import EasyID3
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QListWidget, QPushButton, QListWidgetItem, QLabel, QHBoxLayout, QLineEdit
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
 
@@ -12,6 +13,9 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__)) + "/test-files/"
 
 trackFileList = []
 CURRENT_YEAR_STRING = str(datetime.now().year)
+
+SETTINGS_GUI_WIDTH = 800
+SETTINGS_GUI_HEIGHT = 600
 
 def get_current_month_folder_name():
     """
@@ -23,6 +27,50 @@ def get_current_month_folder_name():
 
     return str(plain_month) + "-" + CURRENT_YEAR_STRING[-2:]
 
+def get_track_info(track_raw_file_path):
+    """
+        Get track ID3 info
+        EasyID3 tags = dict_keys(['album', 'bpm', 'compilation', 'composer', 'copyright', 'encodedby', 'lyricist', 'length', 'media', 'mood', 'grouping', 'title', 'version',
+        'artist', 'albumartist','conductor', 'arranger', 'discnumber', 'organization', 'tracknumber', 'author', 'albumartistsort', 'albumsort', 'composersort', 'artistsort',
+        'titlesort', 'isrc', 'discsubtitle', 'language', 'genre', 'date', 'originaldate', 'performer:*', 'musicbrainz_trackid', 'website', 'replaygain_*_gain', 'replaygain_*_peak',
+        'musicbrainz_artistid', 'musicbrainz_albumid', 'musicbrainz_albumartistid', 'musicbrainz_trmid', 'musicip_puid', 'musicip_fingerprint', 'musicbrainz_albumstatus',
+        'musicbrainz_albumtype', 'releasecountry', 'musicbrainz_discid', 'asin', 'performer', 'barcode', 'catalognumber', 'musicbrainz_releasetrackid',
+        'musicbrainz_releasegroupid', 'musicbrainz_workid', 'acoustid_fingerprint', 'acoustid_id'])
+    """
+
+    track_id3_info = {
+        "artist": "",
+        "albumartist": "",
+        "album": "",
+        "title": "",
+        "length": ""
+    }
+
+    try:
+        audio_id3_info = EasyID3(track_raw_file_path)
+        #print(EasyID3.valid_keys.keys())
+    except mutagen.id3.ID3NoHeaderError:
+        return track_id3_info # If no ID3 tag is found, return as error file for list styling
+
+    if os.path.exists(track_raw_file_path):
+        if audio_id3_info:
+            if not audio_id3_info["artist"] == "":
+                track_id3_info["artist"] = audio_id3_info["artist"][0]
+
+            if not audio_id3_info["albumartist"] == "":
+                track_id3_info["albumartist"] = audio_id3_info["albumartist"][0]
+
+            if not audio_id3_info["album"] == "":
+                track_id3_info["album"] = audio_id3_info["album"][0]
+
+            if not audio_id3_info["title"] == "":
+                track_id3_info["title"] = audio_id3_info["title"][0]
+
+            #if not audio_id3_info["length"] == "":
+                #track_id3_info["length"] = audio_id3_info["length"]
+
+
+    return track_id3_info
 
 def organise_single_track(track_raw_file_path):
     """
@@ -68,6 +116,58 @@ def organise_single_track(track_raw_file_path):
             return True
     return False
 
+
+
+
+class TrackEditor(QWidget):
+    """
+        Editor for single track's ID3 ifnormation
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.resize(480, 320)
+        self.setWindowTitle("Editor")
+
+        editor_window_layout = QVBoxLayout()
+
+        self.track_file_path_label = QLabel("")
+        editor_window_layout.addWidget(self.track_file_path_label)
+
+        self.track_artist_field_label = QLabel("Artist")
+        self.track_artist_field = QLineEdit()
+        editor_window_layout.addWidget(self.track_artist_field_label)
+        editor_window_layout.addWidget(self.track_artist_field)
+
+        self.track_title_field_label = QLabel("title")
+        self.track_title_field = QLineEdit()
+        editor_window_layout.addWidget(self.track_title_field_label)
+        editor_window_layout.addWidget(self.track_title_field)
+
+        self.track_album_field_label = QLabel("Album")
+        self.track_album_field = QLineEdit()
+        editor_window_layout.addWidget(self.track_album_field_label)
+        editor_window_layout.addWidget(self.track_album_field)
+
+        editor_save_and_close_button = QPushButton("Save and close")
+        editor_window_layout.addWidget(editor_save_and_close_button)
+
+        self.setLayout(editor_window_layout)
+
+    def populate_fields(self, track_file_path):
+        """
+            Populate editor fields with found ID3 info
+        """
+
+        track_info = get_track_info( track_file_path )
+        self.track_file_path_label.setText( track_file_path )
+        self.track_artist_field.setText( track_info["artist"] )
+        self.track_title_field.setText( track_info["title"] )
+        self.track_title_field.setText( track_info["album"] )
+
+
+
+
 class PyMusicOrganiser(QWidget):
     """
         Main class for music organiser
@@ -75,7 +175,7 @@ class PyMusicOrganiser(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.resize(640, 480)
+        self.resize(SETTINGS_GUI_WIDTH, SETTINGS_GUI_HEIGHT)
         self.setWindowTitle("Organiser")
         self.setAcceptDrops(True)
 
@@ -102,6 +202,13 @@ class PyMusicOrganiser(QWidget):
                     for single_error_item in items:
                         single_error_item.setBackground(QColor("#ff2e2e"))
 
+    def show_track_id3_editor(self, track_file_path):
+        self.track_editor = TrackEditor()
+        self.track_editor.populate_fields(track_file_path)
+        self.track_editor.show()
+        print(track_file_path)
+
+
     def dragEnterEvent(self, event):
         if event.mimeData().hasImage:
             event.accept()
@@ -119,7 +226,27 @@ class PyMusicOrganiser(QWidget):
         for index, single_file_url in enumerate(event.mimeData().urls()):   
             file_path = event.mimeData().urls()[index].toLocalFile()
             trackFileList.append(file_path) # add to system's file listing
-            self.track_list_widget.insertItem(self.track_list_widget.count(), file_path) # add file to GUI listing
+
+            item = QListWidgetItem()
+            item_widget = QWidget()
+            line_text = QLabel(file_path)
+            line_push_button = QPushButton("Edit")
+            #item.setObjectName(file_path)
+            line_push_button.clicked.connect(lambda: self.show_track_id3_editor(file_path) )
+            item_layout = QHBoxLayout()
+            item_layout.addWidget(line_text)
+            item_layout.addWidget(line_push_button)
+            item_widget.setLayout(item_layout)
+            item.setSizeHint(item_widget.sizeHint())
+            #self.ListWidget.addItem(item)
+
+            #self.track_list_widget.insertItem(self.track_list_widget.count(), file_path) # add file to GUI listing
+            self.track_list_widget.addItem(item) # add file to GUI listing
+            self.track_list_widget.setItemWidget(item, item_widget)
+
+            #self.track_list_widget.insertItem(self.track_list_widget.count(), file_path) # add file to GUI listing
+
+
 
 app = QApplication(sys.argv)
 organiserWindow = PyMusicOrganiser()
