@@ -22,24 +22,27 @@ def get_current_month_folder_name():
         return str(plain_month) + "-" + currentYearString[-2:]
 
 
-# Organises single track into follow folder structure: <year> / <month - last two digits of year> / <artist name> / <filename>
-def organise_single_track(trackRawFilePath):
+def organise_single_track(track_raw_file_path):
+    """
+        Organises single track into follow folder structure: 
+        <year> / <month - last two digits of year> / <artist name> / <filename>
+    """
 
-    raw_file_name = os.path.basename(trackRawFilePath)
+    raw_file_name = os.path.basename(track_raw_file_path)
     print("Running organiser for file: " + raw_file_name)
 
     try:
-        audiofile = ID3(trackRawFilePath)
+        audiofile = ID3(track_raw_file_path)
     except mutagen.id3.ID3NoHeaderError:
         return False # If no ID3 tag is found, return as error file for list styling
 
-    if ( os.path.exists(trackRawFilePath) and audiofile):
+    if ( os.path.exists(track_raw_file_path) and audiofile):
         artist_folder_name = audiofile["TPE1"].text[0]
         print("Artist name: " + artist_folder_name)
 
         if artist_folder_name:
 
-            if not (os.path.exists(ROOT_DIR + currentYearString)):
+            if not os.path.exists(ROOT_DIR + currentYearString) :
                 print("Creating yearly folder...")
                 os.mkdir( ROOT_DIR + currentYearString ) 
 
@@ -55,11 +58,11 @@ def organise_single_track(trackRawFilePath):
 
             # move file to correct location inside monthly and artist folders
             shutil.move(
-                trackRawFilePath, 
+                track_raw_file_path,
                 ROOT_DIR + currentYearString + "/" + get_current_month_folder_name() + "/" + artist_folder_name + "/" + raw_file_name
             )
 
-            trackFileList.remove(trackRawFilePath)
+            trackFileList.remove(track_raw_file_path)
             return True
 
 class PyMusicOrganiser(QWidget):
@@ -70,17 +73,17 @@ class PyMusicOrganiser(QWidget):
         self.setWindowTitle("Organiser")
         self.setAcceptDrops(True)
 
-        mainLayout = QVBoxLayout()
+        main_gui_layout = QVBoxLayout()
 
         self.track_list_widget = QListWidget()
-        mainLayout.addWidget(self.track_list_widget)
+        main_gui_layout.addWidget(self.track_list_widget)
 
         self.organise_button = QPushButton()
         self.organise_button.setText("Organise tracks")
         self.organise_button.clicked.connect(self.organise_tracks_from_listing)
-        mainLayout.addWidget(self.organise_button)
+        main_gui_layout.addWidget(self.organise_button)
 
-        self.setLayout(mainLayout)
+        self.setLayout(main_gui_layout)
 
     def organise_tracks_from_listing(self):
         for index, single_track_file_path in enumerate(trackFileList):
