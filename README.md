@@ -1,5 +1,5 @@
 # py-music-organiser
-Simple music organiser tool for handling music libraries for Rekordbo
+Simple music organiser tool for handling music libraries for Rekordbox
 
 ## Installation
 - Create folder named `test-files` for testing this out. It is used as end point to move files currently in development.
