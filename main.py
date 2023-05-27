@@ -1,8 +1,9 @@
-import mutagen
-from mutagen.id3 import ID3
 from datetime import datetime
 import shutil
-import sys, os
+import sys
+import os
+import mutagen
+from mutagen.id3 import ID3
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QListWidget, QPushButton
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
@@ -13,53 +14,53 @@ trackFileList = []
 currentYearString = str(datetime.now().year)
 
 # Stylize month got as an integer to string in format: "05-23". Used for folder naming.
-def getCurrentMonthFolderName():
-  plainMonth = datetime.now().month
-  if plainMonth < 10:
-    return "0" + str(plainMonth) + "-" + currentYearString[-2:]
-  else:
-    str(plainMonth) + "-" + currentYearString[-2:]
+def get_current_month_folder_name():
+    plain_month = datetime.now().month
+    if plain_month < 10:
+        return "0" + str(plain_month) + "-" + currentYearString[-2:]
+    else:
+        return str(plain_month) + "-" + currentYearString[-2:]
 
 
 # Organises single track into follow folder structure: <year> / <month - last two digits of year> / <artist name> / <filename>
-def organiseSingleTrack(trackRawFilePath):
+def organise_single_track(trackRawFilePath):
 
-  rawFileName = os.path.basename(trackRawFilePath)
-  print("Running organiser for file: " + rawFileName)
+    raw_file_name = os.path.basename(trackRawFilePath)
+    print("Running organiser for file: " + raw_file_name)
 
-  try:
-    audiofile = ID3(trackRawFilePath)
-  except mutagen.id3.ID3NoHeaderError:
-    return False # If no ID3 tag is found, return as error file for list styling
+    try:
+        audiofile = ID3(trackRawFilePath)
+    except mutagen.id3.ID3NoHeaderError:
+        return False # If no ID3 tag is found, return as error file for list styling
 
-  if ( os.path.exists(trackRawFilePath) and audiofile):
-    artistFolderName = audiofile["TPE1"].text[0]
-    print("Artist name: " + artistFolderName)
+    if ( os.path.exists(trackRawFilePath) and audiofile):
+        artist_folder_name = audiofile["TPE1"].text[0]
+        print("Artist name: " + artist_folder_name)
 
-    if artistFolderName:
+        if artist_folder_name:
 
-      if not (os.path.exists(ROOT_DIR + currentYearString)):
-        print("Creating yearly folder...")
-        os.mkdir( ROOT_DIR + currentYearString ) 
+            if not (os.path.exists(ROOT_DIR + currentYearString)):
+                print("Creating yearly folder...")
+                os.mkdir( ROOT_DIR + currentYearString ) 
 
-      # check if current month folder exists
-      if not ( os.path.exists(ROOT_DIR + currentYearString + "/" + getCurrentMonthFolderName()) ):
-        print("Creating monthly folder...")
-        os.mkdir( ROOT_DIR + currentYearString + "/" + getCurrentMonthFolderName() )
+            # check if current month folder exists
+            if not os.path.exists(ROOT_DIR + currentYearString + "/" + get_current_month_folder_name()) :
+                print("Creating monthly folder...")
+                os.mkdir( ROOT_DIR + currentYearString + "/" + get_current_month_folder_name() )
 
-      # check if current artist name folder exists
-      if not ( os.path.exists(ROOT_DIR + currentYearString + "/" + getCurrentMonthFolderName() + "/" + artistFolderName)):
-        print("Creating artist folder...")
-        os.mkdir( ROOT_DIR + currentYearString + "/" + getCurrentMonthFolderName() + "/" + artistFolderName)
+            # check if current artist name folder exists
+            if not os.path.exists(ROOT_DIR + currentYearString + "/" + get_current_month_folder_name() + "/" + artist_folder_name) :
+                print("Creating artist folder...")
+                os.mkdir( ROOT_DIR + currentYearString + "/" + get_current_month_folder_name() + "/" + artist_folder_name)
 
-      # move file to correct location inside monthly and artist folders
-      shutil.move(
-        trackRawFilePath, 
-        ROOT_DIR + currentYearString + "/" + getCurrentMonthFolderName() + "/" + artistFolderName + "/" + rawFileName
-      )
+            # move file to correct location inside monthly and artist folders
+            shutil.move(
+                trackRawFilePath, 
+                ROOT_DIR + currentYearString + "/" + get_current_month_folder_name() + "/" + artist_folder_name + "/" + raw_file_name
+            )
 
-      trackFileList.remove(trackRawFilePath)
-      return True
+            trackFileList.remove(trackRawFilePath)
+            return True
 
 class PyMusicOrganiser(QWidget):
 
@@ -71,28 +72,26 @@ class PyMusicOrganiser(QWidget):
 
         mainLayout = QVBoxLayout()
 
-        self.trackListWidget = QListWidget()
-        mainLayout.addWidget(self.trackListWidget)
+        self.track_list_widget = QListWidget()
+        mainLayout.addWidget(self.track_list_widget)
 
-        self.organiseButton = QPushButton()
-        self.organiseButton.setText("Organise tracks")
-        self.organiseButton.clicked.connect(self.organiseTracksFromListing)
-        mainLayout.addWidget(self.organiseButton)
+        self.organise_button = QPushButton()
+        self.organise_button.setText("Organise tracks")
+        self.organise_button.clicked.connect(self.organise_tracks_from_listing)
+        mainLayout.addWidget(self.organise_button)
 
         self.setLayout(mainLayout)
 
-    def organiseTracksFromListing(self):
-      for index, singleTrackFilePath in enumerate(trackFileList):
-        print(singleTrackFilePath)
-        if organiseSingleTrack(singleTrackFilePath):
-          self.trackListWidget.takeItem(index)
-          break
-        else:
-          items = self.trackListWidget.findItems(singleTrackFilePath, Qt.MatchExactly)
-          if len(items) > 0:
-             for singleItem in items:
-                singleItem.setBackground(QColor("#ff2e2e"))
-
+    def organise_tracks_from_listing(self):
+        for index, single_track_file_path in enumerate(trackFileList):
+            print(single_track_file_path)
+            if organise_single_track(single_track_file_path):
+                self.track_list_widget.takeItem(index)
+            else:
+                items = self.track_list_widget.findItems(single_track_file_path, Qt.MatchExactly)
+                if len(items) > 0:
+                    for single_error_item in items:
+                        single_error_item.setBackground(QColor("#ff2e2e"))
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasImage:
@@ -108,10 +107,10 @@ class PyMusicOrganiser(QWidget):
 
     def dropEvent(self, event):
         event.setDropAction(Qt.CopyAction)
-        for index, singleFileUrl in enumerate(event.mimeData().urls()):   
-          filePath = event.mimeData().urls()[index].toLocalFile()
-          trackFileList.append(filePath) # add to system's file listing
-          self.trackListWidget.insertItem(self.trackListWidget.count(), filePath) # add file to GUI listing
+        for index, single_file_url in enumerate(event.mimeData().urls()):   
+            file_path = event.mimeData().urls()[index].toLocalFile()
+            trackFileList.append(file_path) # add to system's file listing
+            self.track_list_widget.insertItem(self.track_list_widget.count(), file_path) # add file to GUI listing
 
 app = QApplication(sys.argv)
 organiserWindow = PyMusicOrganiser()
