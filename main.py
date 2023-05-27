@@ -11,15 +11,17 @@ from PyQt5.QtCore import Qt
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__)) + "/test-files/"
 
 trackFileList = []
-currentYearString = str(datetime.now().year)
+CURRENT_YEAR_STRING = str(datetime.now().year)
 
-# Stylize month got as an integer to string in format: "05-23". Used for folder naming.
 def get_current_month_folder_name():
+    """
+        Stylize month got as an integer to string in format: "05-23". Used for folder naming.
+    """
     plain_month = datetime.now().month
     if plain_month < 10:
-        return "0" + str(plain_month) + "-" + currentYearString[-2:]
-    else:
-        return str(plain_month) + "-" + currentYearString[-2:]
+        return "0" + str(plain_month) + "-" + CURRENT_YEAR_STRING[-2:]
+
+    return str(plain_month) + "-" + CURRENT_YEAR_STRING[-2:]
 
 
 def organise_single_track(track_raw_file_path):
@@ -42,30 +44,34 @@ def organise_single_track(track_raw_file_path):
 
         if artist_folder_name:
 
-            if not os.path.exists(ROOT_DIR + currentYearString) :
+            if not os.path.exists(ROOT_DIR + CURRENT_YEAR_STRING) :
                 print("Creating yearly folder...")
-                os.mkdir( ROOT_DIR + currentYearString ) 
+                os.mkdir( ROOT_DIR + CURRENT_YEAR_STRING )
 
             # check if current month folder exists
-            if not os.path.exists(ROOT_DIR + currentYearString + "/" + get_current_month_folder_name()) :
+            if not os.path.exists(ROOT_DIR + CURRENT_YEAR_STRING + "/" + get_current_month_folder_name()) :
                 print("Creating monthly folder...")
-                os.mkdir( ROOT_DIR + currentYearString + "/" + get_current_month_folder_name() )
+                os.mkdir( ROOT_DIR + CURRENT_YEAR_STRING + "/" + get_current_month_folder_name() )
 
             # check if current artist name folder exists
-            if not os.path.exists(ROOT_DIR + currentYearString + "/" + get_current_month_folder_name() + "/" + artist_folder_name) :
+            if not os.path.exists(ROOT_DIR + CURRENT_YEAR_STRING + "/" + get_current_month_folder_name() + "/" + artist_folder_name) :
                 print("Creating artist folder...")
-                os.mkdir( ROOT_DIR + currentYearString + "/" + get_current_month_folder_name() + "/" + artist_folder_name)
+                os.mkdir( ROOT_DIR + CURRENT_YEAR_STRING + "/" + get_current_month_folder_name() + "/" + artist_folder_name)
 
             # move file to correct location inside monthly and artist folders
             shutil.move(
                 track_raw_file_path,
-                ROOT_DIR + currentYearString + "/" + get_current_month_folder_name() + "/" + artist_folder_name + "/" + raw_file_name
+                ROOT_DIR + CURRENT_YEAR_STRING + "/" + get_current_month_folder_name() + "/" + artist_folder_name + "/" + raw_file_name
             )
 
             trackFileList.remove(track_raw_file_path)
             return True
+    return False
 
 class PyMusicOrganiser(QWidget):
+    """
+        Main class for music organiser
+    """
 
     def __init__(self):
         super().__init__()
