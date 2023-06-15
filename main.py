@@ -116,6 +116,20 @@ def organise_single_track(track_raw_file_path):
             return True
     return False
 
+def provide_new_track_id3_info(track_raw_file_path, new_id3_info):
+    print(track_raw_file_path)
+    print(new_id3_info)
+
+    try:
+        audio_reference = EasyID3(track_raw_file_path)
+        audio_reference["artist"] = new_id3_info["artist"]
+        audio_reference["title"] = new_id3_info["title"]
+        audio_reference.save()
+        return True
+        
+    except mutagen.id3.ID3NoHeaderError:
+        return False
+
 
 
 
@@ -124,14 +138,17 @@ class TrackEditor(QWidget):
         Editor for single track's ID3 ifnormation
     """
 
-    def __init__(self):
+    def __init__(self, track_file_path):
         super().__init__()
-        self.resize(480, 320)
+        self.resize(480, 240)
         self.setWindowTitle("Editor")
 
         editor_window_layout = QVBoxLayout()
 
+        editor_window_layout.addStretch()
+
         self.track_file_path_label = QLabel("")
+        self.track_file_path = track_file_path # Saving track_file_parth into self as a identifier
         editor_window_layout.addWidget(self.track_file_path_label)
 
         self.track_artist_field_label = QLabel("Artist")
@@ -139,7 +156,7 @@ class TrackEditor(QWidget):
         editor_window_layout.addWidget(self.track_artist_field_label)
         editor_window_layout.addWidget(self.track_artist_field)
 
-        self.track_title_field_label = QLabel("title")
+        self.track_title_field_label = QLabel("Title")
         self.track_title_field = QLineEdit()
         editor_window_layout.addWidget(self.track_title_field_label)
         editor_window_layout.addWidget(self.track_title_field)
@@ -150,7 +167,9 @@ class TrackEditor(QWidget):
         editor_window_layout.addWidget(self.track_album_field)
 
         editor_save_and_close_button = QPushButton("Save and close")
+        editor_save_and_close_button.clicked.connect(self.save_track_info) # saving track info
         editor_window_layout.addWidget(editor_save_and_close_button)
+        editor_window_layout.addStretch()
 
         self.setLayout(editor_window_layout)
 
@@ -158,12 +177,23 @@ class TrackEditor(QWidget):
         """
             Populate editor fields with found ID3 info
         """
-
         track_info = get_track_info( track_file_path )
         self.track_file_path_label.setText( track_file_path )
         self.track_artist_field.setText( track_info["artist"] )
         self.track_title_field.setText( track_info["title"] )
         self.track_title_field.setText( track_info["album"] )
+
+    def save_track_info(self):
+        new_track_info = {
+            "artist": self.track_artist_field.text(),
+            "title": self.track_title_field.text()
+        }
+
+        if provide_new_track_id3_info(self.track_file_path, new_track_info):
+            print("Track saved")
+        else:
+            print("Failed to save")
+        self.close()
 
 
 
@@ -192,18 +222,23 @@ class PyMusicOrganiser(QWidget):
         self.setLayout(main_gui_layout)
 
     def organise_tracks_from_listing(self):
-        for index, single_track_file_path in enumerate(trackFileList):
+        #print(len(trackFileList))
+        #for index, single_track_file_path in enumerate(trackFileList):
+        for single_track_file_path in trackFileList:
             print(single_track_file_path)
             if organise_single_track(single_track_file_path):
-                self.track_list_widget.takeItem(index)
+                print("index: ", trackFileList.index(single_track_file_path))
+                self.track_list_widget.takeItem(trackFileList.index(single_track_file_path))
+                # List should be emptied another way. Now list is being emptied and references are lost.
             else:
                 items = self.track_list_widget.findItems(single_track_file_path, Qt.MatchExactly)
                 if len(items) > 0:
                     for single_error_item in items:
                         single_error_item.setBackground(QColor("#ff2e2e"))
 
+
     def show_track_id3_editor(self, track_file_path):
-        self.track_editor = TrackEditor()
+        self.track_editor = TrackEditor(track_file_path)
         self.track_editor.populate_fields(track_file_path)
         self.track_editor.show()
         print(track_file_path)
